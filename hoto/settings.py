@@ -78,10 +78,10 @@ WSGI_APPLICATION = 'hoto.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'devicedb',
-        'USER': 'hoto',
-        'PASSWORD': 'hoto@12345',
-        'HOST': 'localhost',
+        'NAME': 'devicedb', # Enter the databases name 
+        'USER': 'hoto',     # Add the username 
+        'PASSWORD': 'hoto@12345', #password 
+        'HOST': 'localhost',    # IP address of server 
         'PORT': '3306',
     }
 }
