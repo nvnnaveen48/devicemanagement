@@ -1,0 +1,159 @@
+{% extends 'login/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">{% if edit_user %}Edit User{% else %}Add New User{% endif %}</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    <div class="messages mb-3">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post" id="userForm">
+                        {% csrf_token %}
+                        
+                        {% if request.user.admin_state == 'yes' and not edit_user %}
+                        <div class="mb-3">
+                            <label for="admin_state" class="form-label">User Type</label>
+                            <select class="form-select" id="admin_state" name="admin_state" onchange="togglePasswordFields()">
+                                <option value="-" selected>Normal User</option>
+                                <option value="yes">Admin</option>
+                                <option value="no">Limited Admin</option>
+                            </select>
+                        </div>
+                        {% else %}
+                        <input type="hidden" name="admin_state" value="-">
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="employee_id" class="form-label">Employee ID</label>
+                            <input type="text" class="form-control" id="employee_id" name="employee_id" 
+                                   value="{% firstof form_data.employee_id edit_user.employee_id '' %}"
+                                   {% if edit_user %}readonly{% endif %} required>
+                            <div class="form-text">This will be used as your login username.</div>
+                        </div>
+                        
+                        {% if request.user.admin_state == 'yes' and not edit_user %}
+                        <div id="password_fields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password">
+                                <div class="form-text">Required for admin and limited admin users</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{% firstof form_data.name edit_user.name '' %}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            {% if request.user.admin_state == 'yes' %}
+                            <input type="text" class="form-control" id="department" name="department" 
+                                   value="{% firstof form_data.department edit_user.department '' %}" required>
+                            {% else %}
+                            <input type="text" class="form-control" id="department" name="department" 
+                                   value="{{ request.user.department }}" readonly required>
+                            <div class="form-text">Department is automatically set to your department.</div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if edit_user %}
+                            {% if request.user.admin_state == 'yes' %}
+                            <div class="mb-3">
+                                <label for="state" class="form-label">State</label>
+                                <select class="form-select" id="state" name="state">
+                                    <option value="enable" {% if edit_user.state == 'enable' %}selected{% endif %}>Enable</option>
+                                    <option value="disable" {% if edit_user.state == 'disable' %}selected{% endif %}>Disable</option>
+                                </select>
+                            </div>
+                            {% elif request.user.admin_state == 'no' and edit_user.admin_state == '-' and edit_user.state == 'enable' %}
+                            <div class="mb-3">
+                                <label for="state" class="form-label">State</label>
+                                <select class="form-select" id="state" name="state">
+                                    <option value="disable">Disable</option>
+                                </select>
+                                <div class="form-text">Limited admin can only disable normal users.</div>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'login:user_list' %}" class="btn btn-secondary">Cancel</a>
+                            <div>
+                                <button type="reset" class="btn btn-warning me-2">Clear Form</button>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if edit_user %}Update{% else %}Create{% endif %} User
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function togglePasswordFields() {
+    var adminState = document.getElementById('admin_state').value;
+    var passwordFields = document.getElementById('password_fields');
+    if (!passwordFields) return;
+    
+    var passwordInputs = document.querySelectorAll('#password_fields input[type="password"]');
+    
+    if (adminState === 'yes' || adminState === 'no') {
+        // Show password fields for admin and limited admin
+        passwordFields.style.display = 'block';
+        passwordInputs.forEach(input => input.required = true);
+    } else {
+        // Hide password fields for normal users
+        passwordFields.style.display = 'none';
+        passwordInputs.forEach(input => {
+            input.required = false;
+            input.value = ''; // Clear password fields when hidden
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('admin_state')) {
+        togglePasswordFields();
+    }
+});
+
+document.getElementById('userForm').addEventListener('submit', function(e) {
+    var passwordFields = document.getElementById('password_fields');
+    if (passwordFields && passwordFields.style.display !== 'none') {
+        var password = document.getElementById('password').value;
+        var confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (password !== confirmPassword) {
+            e.preventDefault();
+            alert('Passwords do not match!');
+        }
+    }
+});
+</script>
+{% endblock %}
+
+{% endblock %} 

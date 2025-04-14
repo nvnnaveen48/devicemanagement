@@ -1,0 +1,159 @@
+{% extends 'login/base.html' %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Device List</h2>
+        <div>
+            {% if user.admin_state == 'yes' %}
+            <div class="d-flex justify-content-between mb-3">
+                <a href="{% url 'login:device_add' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Device
+                </a>
+                <a href="{% url 'login:device_bulk_add' %}" class="btn btn-success">
+                    <i class="fas fa-file-import"></i> Bulk Add Devices
+                </a>
+            </div>
+            <a href="{% url 'login:device_bulk_delete' %}" class="btn btn-danger ms-2">
+                <i class="fas fa-trash"></i> Bulk Delete
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Device List</h5>
+                    <div>
+                        {% if user.admin_state == 'yes' %}
+                        <a href="{% url 'login:update_all_devices_to_working' %}" class="btn btn-warning btn-sm" onclick="return confirm('Are you sure you want to update all devices to working condition?')">
+                            <i class="fas fa-sync"></i> Update All to Working
+                        </a>
+                        <a href="{% url 'login:device_bulk_add' %}" class="btn btn-success btn-sm">
+                            <i class="fas fa-file-import"></i> Bulk Add
+                        </a>
+                        <a href="{% url 'login:device_bulk_delete' %}" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Bulk Delete
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'login:device_add' %}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Add Device
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Serial Number</th>
+                                    <th>Manufacturer</th>
+                                    <th>Model</th>
+                                    <th>Department</th>
+                                    <th>Condition</th>
+                                    <th>State</th>
+                                    <th>Created Info</th>
+                                    <th>Last Update</th>
+                                    <th>Damage Info</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for device in devices %}
+                                <tr {% if device.condition == 'damaged' %}class="table-danger"{% endif %}>
+                                    <td>
+                                        <strong>{{ device.serial_number }}</strong>
+                                    </td>
+                                    <td>{{ device.make }}</td>
+                                    <td>{{ device.model }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ device.department }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if device.condition == 'working' %}bg-success{% elif device.condition == 'damaged' %}bg-danger{% endif %}">
+                                            {% if device.condition == 'damaged' %}Damage{% else %}{{ device.condition|title }}{% endif %}
+                                        </span>
+                                        {% if device.condition == 'damaged' and device.damage_info %}
+                                            <br>
+                                            <small class="text-muted">{{ device.damage_info }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if device.state == 'stock' %}bg-primary{% elif device.state == 'assigned' %}bg-warning{% else %}bg-info{% endif %}">
+                                            {{ device.state|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <div><strong>By:</strong> {{ device.created_by.employee_id }}</div>
+                                            <div><strong>Date:</strong> {{ device.created_at|date:"d/m/Y H:i" }}</div>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <div><strong>By:</strong> {{ device.updated_by.employee_id }}</div>
+                                            <div><strong>Date:</strong> {{ device.updated_at|date:"d/m/Y H:i" }}</div>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if device.condition == 'damaged' %}
+                                        <small>
+                                            <div><strong>Reported By:</strong> {{ device.damage_by.employee_id }}</div>
+                                            <div><strong>Damage Date:</strong> {{ device.damage_date|date:"d/m/Y H:i" }}</div>
+                                            {% if device.damage_info %}
+                                            <div><strong>Details:</strong> {{ device.damage_info }}</div>
+                                            {% endif %}
+                                        </small>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            {% if device.condition == 'damaged' and user.admin_state != 'yes' %}
+                                            <button class="btn btn-sm btn-primary" disabled title="Cannot edit damaged device">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            {% else %}
+                                            <a href="{% url 'login:device_edit' device.id %}" class="btn btn-sm btn-primary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if device.condition == 'working' %}
+                                            <a href="{% url 'login:handover_create' %}?device={{ device.id }}" class="btn btn-sm btn-info" title="Handover">
+                                                <i class="fas fa-hand-holding"></i>
+                                            </a>
+                                            {% endif %}
+                                            
+                                            {% if user.admin_state == 'yes' %}
+                                            <a href="{% url 'login:device_delete' device.id %}" class="btn btn-sm btn-danger" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table td {
+        vertical-align: middle;
+    }
+    .table small {
+        font-size: 0.85em;
+    }
+    .badge {
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %} 

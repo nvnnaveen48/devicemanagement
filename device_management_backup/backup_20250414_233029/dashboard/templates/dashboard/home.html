@@ -1,0 +1,175 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title }} - Hoto</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            padding-top: 20px;
+        }
+        .sidebar-link {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+            transition: 0.3s;
+        }
+        .sidebar-link:hover {
+            background-color: #495057;
+            color: #fff;
+        }
+        .sidebar-link.active {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+        .main-content {
+            padding: 20px;
+        }
+        .navbar {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .welcome-card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .nav-pills .nav-link {
+            color: #495057;
+            margin-right: 10px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            {% if user.is_authenticated %}
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 sidebar">
+                <div class="text-center mb-4">
+                    <h4 class="text-white">Hoto Dashboard</h4>
+                </div>
+                <a href="{% url 'dashboard:home' %}" class="sidebar-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <i class="fas fa-home me-2"></i> Home
+                </a>
+                <a href="{% url 'logout' %}" class="sidebar-link">
+                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </a>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content">
+                <!-- Top Navbar -->
+                <nav class="navbar navbar-expand-lg mb-4">
+                    <div class="container-fluid">
+                        <span class="navbar-brand">{{ page_title }}</span>
+                        <div class="ms-auto">
+                            <span class="text-muted me-3">Welcome, {{ user.name }}</span>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Navigation Pills -->
+                <ul class="nav nav-pills mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" 
+                           href="{% url 'dashboard:home' %}">
+                            <i class="fas fa-chart-line me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name in 'add_user,show_users,delete_user' %}active{% endif %}" 
+                           data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                            <i class="fas fa-users me-2"></i>Users
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'dashboard:add_user' %}">Add User</a></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard:show_users' %}">Show Users</a></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard:delete_user' %}">Delete User</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.url_name in 'devices_inventory,devices_sheet' %}active{% endif %}" 
+                           data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                            <i class="fas fa-laptop me-2"></i>Devices
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'dashboard:devices_inventory' %}">Devices Inventory</a></li>
+                            <li><a class="dropdown-item" href="{% url 'dashboard:devices_sheet' %}">Devices Sheet</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'handover' %}active{% endif %}" 
+                           href="{% url 'dashboard:handover' %}">
+                            <i class="fas fa-share me-2"></i>Handover
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'takeover' %}active{% endif %}" 
+                           href="{% url 'dashboard:takeover' %}">
+                            <i class="fas fa-download me-2"></i>Takeover
+                        </a>
+                    </li>
+                </ul>
+            {% endif %}
+
+                {% block content %}
+                {% if user.is_authenticated %}
+                <!-- Welcome Card -->
+                <div class="welcome-card">
+                    <h2>Welcome to Your Dashboard</h2>
+                    <p>You are logged in as an admin user.</p>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card text-white bg-primary mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Employee ID</h5>
+                                    <p class="card-text">{{ user.employee_id }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-white bg-success mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Account Status</h5>
+                                    <p class="card-text">{{ user.state|title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card text-white bg-info mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">Admin Status</h5>
+                                    <p class="card-text">{{ user.admin_state|title }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="welcome-card">
+                    <h2>Welcome to Hoto</h2>
+                    <p>Please <a href="{% url 'login:login' %}">login</a> to access the dashboard.</p>
+                </div>
+                {% endif %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

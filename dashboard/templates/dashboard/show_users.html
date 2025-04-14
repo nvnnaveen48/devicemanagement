@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>User Management</h2>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>Employee ID</th>
+                <th>Admin State</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr {% if user.is_disabled %}class="table-secondary"{% endif %}>
+                <td>{{ user.username }}</td>
+                <td>{{ user.name }}</td>
+                <td>{{ user.employee_id }}</td>
+                <td>
+                    {% if user.admin_state == 'yes' %}
+                        Full Admin
+                    {% elif user.admin_state == 'no' %}
+                        Limited Admin
+                    {% else %}
+                        Normal User
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.is_disabled %}
+                        Disabled
+                        {% if user.disable_by %}
+                        <br><small class="text-muted">by {{ user.disable_by }}</small>
+                        {% endif %}
+                    {% else %}
+                        Enabled
+                        {% if user.enable_by %}
+                        <br><small class="text-muted">by {{ user.enable_by }}</small>
+                        {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if user.username != request.user.username %}
+                        {% if user.is_disabled and can_enable_users %}
+                            <form method="post" action="{% url 'enable_user' user.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm">Enable</button>
+                            </form>
+                        {% elif not user.is_disabled and can_disable_users %}
+                            {% if user.admin_state == 'yes' and request.user.admin_state != 'yes' %}
+                                <!-- Cannot disable full admin users -->
+                            {% else %}
+                                <form method="post" action="{% url 'delete_user' user.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Disable</button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %} 

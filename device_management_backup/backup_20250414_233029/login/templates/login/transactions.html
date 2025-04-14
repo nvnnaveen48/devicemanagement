@@ -1,0 +1,132 @@
+{% extends 'login/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Transactions</h2>
+        <div>
+            <a href="{% url 'login:handover_create' %}" class="btn btn-primary">
+                <i class="fas fa-hand-holding"></i> New Handover
+            </a>
+            <a href="{% url 'login:takeover_create' %}" class="btn btn-warning">
+                <i class="fas fa-hand-paper"></i> New Takeover
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="transaction_type" class="form-label">Transaction Type</label>
+                    <select class="form-select" id="transaction_type" name="transaction_type">
+                        <option value="">All</option>
+                        <option value="handover" {% if request.GET.transaction_type == 'handover' %}selected{% endif %}>Handover</option>
+                        <option value="takeover" {% if request.GET.transaction_type == 'takeover' %}selected{% endif %}>Takeover</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filter</button>
+                    <a href="?download=true" class="btn btn-success">
+                        <i class="fas fa-download"></i> Download CSV
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Device</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Device Condition</th>
+                            <th>Device State</th>
+                            <th>Created By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trans in transactions %}
+                        <tr>
+                            <td>{{ trans.transaction.transaction_date|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                <span class="badge {% if trans.transaction.transaction_type == 'handover' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {{ trans.transaction.transaction_type|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <strong>{{ trans.transaction.device.serial_number }}</strong>
+                                <div class="small text-muted">
+                                    {{ trans.transaction.device.make }} {{ trans.transaction.device.model }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if trans.transaction.from_user %}
+                                    {{ trans.transaction.from_user.name }}
+                                    <div class="small text-muted">({{ trans.transaction.from_user.employee_id }})</div>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if trans.transaction.to_user %}
+                                    {{ trans.transaction.to_user.name }}
+                                    <div class="small text-muted">({{ trans.transaction.to_user.employee_id }})</div>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if trans.transaction.device_condition == 'working' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {% if trans.transaction.device_condition == 'damaged' %}Damage{% else %}{{ trans.transaction.device_condition|title }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if trans.status_after == 'stock' %}bg-primary{% elif trans.status_after == 'assigned' %}bg-warning{% else %}bg-info{% endif %}">
+                                    {{ trans.status_after|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ trans.transaction.created_by.name }}
+                                <div class="small text-muted">({{ trans.transaction.created_by.employee_id }})</div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">No transactions found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table td {
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.9em;
+    }
+    .small {
+        font-size: 0.85em;
+    }
+</style>
+{% endblock %} 

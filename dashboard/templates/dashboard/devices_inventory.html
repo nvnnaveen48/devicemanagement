@@ -1,0 +1,54 @@
+{% extends "dashboard/home.html" %}
+
+{% block content %}
+<div class="welcome-card">
+    <h2>Devices Inventory</h2>
+    <p>Manage and track all devices in the system</p>
+    <hr>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Stats</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="text-primary">0</h3>
+                                <p class="mb-0">Total Devices</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="text-success">0</h3>
+                                <p class="mb-0">Available</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="text-warning">0</h3>
+                                <p class="mb-0">Assigned</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 text-center">
+                                <h3 class="text-danger">0</h3>
+                                <p class="mb-0">Under Maintenance</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Device Management</h5>
+                    <p class="card-text">Coming soon: Device inventory management features</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
