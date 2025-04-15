@@ -6,7 +6,7 @@
         <div class="col-md-10">
             <div class="card">
                 <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Bulk Delete Devices</h4>
+                    <h4 class="mb-0">Bulk Disable Users</h4>
                     <div>
                         <span class="badge bg-light text-dark" id="selectedCount">0 Selected</span>
                     </div>
@@ -23,9 +23,10 @@
                     <div class="alert alert-warning">
                         <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Warning!</h5>
                         <p class="mb-0">
-                            - This action will permanently delete the selected devices.<br>
-                            - Devices that are currently assigned cannot be deleted.<br>
-                            - This action cannot be undone.
+                            - This action will disable the selected users.<br>
+                            - Disabled users will not be able to log in.<br>
+                            - You cannot disable your own account or superuser accounts.<br>
+                            - This action can be reversed by re-enabling users later.
                         </p>
                     </div>
 
@@ -41,32 +42,32 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Condition</label>
-                            <select class="form-select" id="conditionFilter">
-                                <option value="">All Conditions</option>
-                                <option value="working">Working</option>
-                                <option value="damaged">Damaged</option>
+                            <label class="form-label">Admin State</label>
+                            <select class="form-select" id="adminStateFilter">
+                                <option value="">All States</option>
+                                <option value="yes">Admin</option>
+                                <option value="no">Limited Admin</option>
+                                <option value="-">Normal User</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">State</label>
-                            <select class="form-select" id="stateFilter">
+                            <label class="form-label">User State</label>
+                            <select class="form-select" id="userStateFilter">
                                 <option value="">All States</option>
-                                <option value="stock">Stock</option>
-                                <option value="assigned">Assigned</option>
-                                <option value="maintenance">Maintenance</option>
+                                <option value="enable">Enabled</option>
+                                <option value="disable">Disabled</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Search</label>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search serial number...">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search employee ID or name...">
                         </div>
                     </div>
 
                     <form method="post" id="bulkDeleteForm">
                         {% csrf_token %}
                         <div class="table-responsive">
-                            <table class="table table-hover" id="devicesTable">
+                            <table class="table table-hover" id="usersTable">
                                 <thead>
                                     <tr>
                                         <th style="width: 50px;">
@@ -75,46 +76,50 @@
                                                 <label class="form-check-label" for="selectAll">All</label>
                                             </div>
                                         </th>
-                                        <th>Serial Number</th>
-                                        <th>Manufacturer</th>
-                                        <th>Model</th>
+                                        <th>Employee ID</th>
+                                        <th>Name</th>
                                         <th>Department</th>
-                                        <th>Condition</th>
+                                        <th>Admin State</th>
                                         <th>State</th>
+                                        <th>Created By</th>
+                                        <th>Created Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for device in devices %}
-                                    <tr class="device-row" 
-                                        data-department="{{ device.department|lower }}" 
-                                        data-condition="{{ device.condition|lower }}"
-                                        data-state="{{ device.state|lower }}"
-                                        data-serial="{{ device.serial_number|lower }}">
+                                    {% for user in users %}
+                                    <tr class="user-row" 
+                                        data-department="{{ user.department|lower }}" 
+                                        data-admin-state="{{ user.admin_state }}"
+                                        data-state="{{ user.state }}"
+                                        data-search="{{ user.employee_id|lower }} {{ user.name|lower }}">
                                         <td>
                                             <div class="form-check">
-                                                <input type="checkbox" name="device_ids" value="{{ device.id }}" 
-                                                       class="form-check-input device-checkbox"
-                                                       {% if device.state == 'assigned' %}disabled{% endif %}>
+                                                <input type="checkbox" name="user_ids" value="{{ user.id }}" 
+                                                       class="form-check-input user-checkbox"
+                                                       {% if user.is_superuser or user == request.user %}disabled{% endif %}>
                                             </div>
                                         </td>
-                                        <td>{{ device.serial_number }}</td>
-                                        <td>{{ device.make }}</td>
-                                        <td>{{ device.model }}</td>
-                                        <td>{{ device.department }}</td>
+                                        <td>{{ user.employee_id }}</td>
+                                        <td>{{ user.name }}</td>
+                                        <td>{{ user.department }}</td>
                                         <td>
-                                            <span class="badge {% if device.condition == 'working' %}bg-success{% else %}bg-danger{% endif %}">
-                                                {{ device.condition|title }}
+                                            <span class="badge {% if user.admin_state == 'yes' %}bg-danger{% elif user.admin_state == 'no' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                                {% if user.admin_state == 'yes' %}Admin
+                                                {% elif user.admin_state == 'no' %}Limited Admin
+                                                {% else %}Normal User{% endif %}
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge {% if device.state == 'stock' %}bg-primary{% elif device.state == 'assigned' %}bg-warning{% else %}bg-info{% endif %}">
-                                                {{ device.state|title }}
+                                            <span class="badge {% if user.state == 'enable' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ user.state|title }}
                                             </span>
                                         </td>
+                                        <td>{{ user.create_by.employee_id }}</td>
+                                        <td>{{ user.create_datetime|date:"Y-m-d H:i" }}</td>
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="7" class="text-center">No devices available for deletion.</td>
+                                        <td colspan="8" class="text-center">No users available.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -122,11 +127,11 @@
                         </div>
 
                         <div class="d-flex justify-content-between mt-3">
-                            <a href="{% url 'login:device_list' %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to Device List
+                            <a href="{% url 'login:user_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to User List
                             </a>
                             <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
-                                <i class="fas fa-trash"></i> Delete Selected Devices
+                                <i class="fas fa-user-slash"></i> Disable Selected Users
                             </button>
                         </div>
                     </form>
@@ -140,10 +145,10 @@
 .table td {
     vertical-align: middle;
 }
-.device-row {
+.user-row {
     display: table-row;
 }
-.device-row.hidden {
+.user-row.hidden {
     display: none;
 }
 </style>
@@ -156,36 +161,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectAllCheckbox = document.getElementById('selectAll');
     const deleteButton = document.getElementById('deleteButton');
     const selectedCountBadge = document.getElementById('selectedCount');
-    const deviceCheckboxes = document.getElementsByClassName('device-checkbox');
+    const userCheckboxes = document.getElementsByClassName('user-checkbox');
     const searchInput = document.getElementById('searchInput');
     const departmentFilter = document.getElementById('departmentFilter');
-    const conditionFilter = document.getElementById('conditionFilter');
-    const stateFilter = document.getElementById('stateFilter');
-    const deviceRows = document.getElementsByClassName('device-row');
+    const adminStateFilter = document.getElementById('adminStateFilter');
+    const userStateFilter = document.getElementById('userStateFilter');
+    const userRows = document.getElementsByClassName('user-row');
 
     // Function to update filters
     function updateFilters() {
         const department = departmentFilter.value.toLowerCase();
-        const condition = conditionFilter.value.toLowerCase();
-        const state = stateFilter.value.toLowerCase();
+        const adminState = adminStateFilter.value;
+        const userState = userStateFilter.value;
         const search = searchInput.value.toLowerCase();
 
-        Array.from(deviceRows).forEach(row => {
+        Array.from(userRows).forEach(row => {
             const rowDepartment = row.getAttribute('data-department');
-            const rowCondition = row.getAttribute('data-condition');
+            const rowAdminState = row.getAttribute('data-admin-state');
             const rowState = row.getAttribute('data-state');
-            const rowSerial = row.getAttribute('data-serial');
+            const rowSearch = row.getAttribute('data-search');
 
             const matchesDepartment = !department || rowDepartment === department;
-            const matchesCondition = !condition || rowCondition === condition;
-            const matchesState = !state || rowState === state;
-            const matchesSearch = !search || rowSerial.includes(search);
+            const matchesAdminState = !adminState || rowAdminState === adminState;
+            const matchesState = !userState || rowState === userState;
+            const matchesSearch = !search || rowSearch.includes(search);
 
-            if (matchesDepartment && matchesCondition && matchesState && matchesSearch) {
+            if (matchesDepartment && matchesAdminState && matchesState && matchesSearch) {
                 row.style.display = 'table-row';
             } else {
                 row.style.display = 'none';
-                const checkbox = row.querySelector('.device-checkbox');
+                const checkbox = row.querySelector('.user-checkbox');
                 if (checkbox) checkbox.checked = false;
             }
         });
@@ -196,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to update select all checkbox state
     function updateSelectAllState() {
-        const visibleCheckboxes = Array.from(deviceCheckboxes).filter(cb => 
+        const visibleCheckboxes = Array.from(userCheckboxes).filter(cb => 
             cb.closest('tr').style.display !== 'none' && !cb.disabled
         );
         const allChecked = visibleCheckboxes.length > 0 && 
@@ -206,29 +211,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to update delete button state
     function updateDeleteButtonState() {
-        const checkedCount = Array.from(deviceCheckboxes)
+        const checkedCount = Array.from(userCheckboxes)
             .filter(cb => cb.checked).length;
         
         deleteButton.disabled = checkedCount === 0;
         selectedCountBadge.textContent = `${checkedCount} Selected`;
         
         if (checkedCount > 0) {
-            deleteButton.innerHTML = `<i class="fas fa-trash"></i> Delete ${checkedCount} Device(s)`;
+            deleteButton.innerHTML = `<i class="fas fa-user-slash"></i> Disable ${checkedCount} User(s)`;
         } else {
-            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete Selected Devices';
+            deleteButton.innerHTML = '<i class="fas fa-user-slash"></i> Disable Selected Users';
         }
     }
 
     // Event Listeners
     selectAllCheckbox.addEventListener('change', function() {
-        const visibleCheckboxes = Array.from(deviceCheckboxes).filter(cb => 
+        const visibleCheckboxes = Array.from(userCheckboxes).filter(cb => 
             cb.closest('tr').style.display !== 'none' && !cb.disabled
         );
         visibleCheckboxes.forEach(cb => cb.checked = this.checked);
         updateDeleteButtonState();
     });
 
-    Array.from(deviceCheckboxes).forEach(checkbox => {
+    Array.from(userCheckboxes).forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             updateSelectAllState();
             updateDeleteButtonState();
@@ -238,21 +243,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Filter event listeners
     searchInput.addEventListener('input', updateFilters);
     departmentFilter.addEventListener('change', updateFilters);
-    conditionFilter.addEventListener('change', updateFilters);
-    stateFilter.addEventListener('change', updateFilters);
+    adminStateFilter.addEventListener('change', updateFilters);
+    userStateFilter.addEventListener('change', updateFilters);
 
     // Form submission
     document.getElementById('bulkDeleteForm').addEventListener('submit', function(e) {
-        const checkedCount = Array.from(deviceCheckboxes)
+        const checkedCount = Array.from(userCheckboxes)
             .filter(cb => cb.checked).length;
         
         if (checkedCount === 0) {
             e.preventDefault();
-            alert('Please select at least one device to delete.');
+            alert('Please select at least one user to disable.');
             return;
         }
 
-        if (!confirm(`Are you sure you want to delete ${checkedCount} device(s)?\n\nThis action cannot be undone.`)) {
+        if (!confirm(`Are you sure you want to disable ${checkedCount} user(s)?\n\nThey will not be able to log in until re-enabled.`)) {
             e.preventDefault();
         }
     });

@@ -1,3 +1,13 @@
+# Install sqlserver
+# install python
+# install django 
+
+# config the server 
+
+# insert the server details in the hoto/setting.py file 
+
+
+
 Django==4.2.7
 Pillow==10.0.0
 django-crispy-forms==2.0

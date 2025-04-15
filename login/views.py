@@ -13,6 +13,10 @@ from datetime import datetime
 import json
 
 def login(request):
+    # Redirect to dashboard if user is already authenticated
+    if request.user.is_authenticated:
+        return redirect('login:dashboard')
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -21,7 +25,12 @@ def login(request):
         if user is not None:
             if user.state == 'enable':
                 auth_login(request, user)
-                return redirect('login:dashboard')
+                # Set session expiry
+                if not request.POST.get('remember_me', None):
+                    request.session.set_expiry(0)  # Session expires when browser closes
+                # Get next URL from query parameters or use default
+                next_url = request.GET.get('next', 'login:dashboard')
+                return redirect(next_url)
             else:
                 messages.error(request, 'Your account is disabled.')
         else:
@@ -38,8 +47,10 @@ def dashboard(request):
     # Get devices based on user's admin state
     if request.user.admin_state == 'yes':
         devices = Device.objects.all()
+        users = CustomUser.objects.all()
     else:
         devices = Device.objects.filter(department=request.user.department)
+        users = CustomUser.objects.filter(department=request.user.department)
 
     # Calculate device statistics
     total_devices = devices.count()
@@ -48,16 +59,33 @@ def dashboard(request):
     assigned_devices = devices.filter(state='assigned').count()
     maintenance_devices = devices.filter(state='maintenance').count()
 
+    # Calculate user statistics
+    total_users = users.count()
+    admin_users = users.filter(admin_state='yes').count()
+    limited_admin_users = users.filter(admin_state='no').count()
+    normal_users = users.filter(admin_state='-').count()
+    enabled_users = users.filter(state='enable').count()
+    disabled_users = users.filter(state='disable').count()
+
     # Calculate department-wise statistics
     departments = {}
     for dept in devices.values_list('department', flat=True).distinct():
         dept_devices = devices.filter(department=dept)
+        dept_users = users.filter(department=dept)
         departments[dept] = {
             'total': dept_devices.count(),
             'damaged': dept_devices.filter(condition='damaged').count(),
             'available': dept_devices.filter(state='stock').count(),
             'assigned': dept_devices.filter(state='assigned').count(),
-            'maintenance': dept_devices.filter(state='maintenance').count()
+            'maintenance': dept_devices.filter(state='maintenance').count(),
+            'users': {
+                'total': dept_users.count(),
+                'admin': dept_users.filter(admin_state='yes').count(),
+                'limited_admin': dept_users.filter(admin_state='no').count(),
+                'normal': dept_users.filter(admin_state='-').count(),
+                'enabled': dept_users.filter(state='enable').count(),
+                'disabled': dept_users.filter(state='disable').count(),
+            }
         }
 
     # Get recent transactions
@@ -69,6 +97,12 @@ def dashboard(request):
         'available_devices': available_devices,
         'assigned_devices': assigned_devices,
         'maintenance_devices': maintenance_devices,
+        'total_users': total_users,
+        'admin_users': admin_users,
+        'limited_admin_users': limited_admin_users,
+        'normal_users': normal_users,
+        'enabled_users': enabled_users,
+        'disabled_users': disabled_users,
         'departments': departments,
         'recent_transactions': recent_transactions,
     }
@@ -78,12 +112,32 @@ def dashboard(request):
 # User Management Views
 @login_required
 def user_list(request):
+    # Get filter parameters
+    state = request.GET.get('state')
+    admin_state = request.GET.get('admin_state')
+    
+    # Base queryset based on user's admin state
     if request.user.admin_state == 'yes':
         users = CustomUser.objects.all()
     else:
         # Limited admin can only see normal users in their department
         users = CustomUser.objects.filter(department=request.user.department, admin_state='-')
-    return render(request, 'login/user_list.html', {'users': users})
+    
+    # Apply filters
+    if state:
+        users = users.filter(state=state)
+    if admin_state:
+        users = users.filter(admin_state=admin_state)
+    
+    # Order by username
+    users = users.order_by('username')
+    
+    context = {
+        'users': users,
+        'current_state': state,
+        'current_admin_state': admin_state
+    }
+    return render(request, 'login/user_list.html', context)
 
 @login_required
 def user_add(request):
@@ -108,6 +162,20 @@ def user_add(request):
             # Validate required fields
             required_fields = [employee_id, name]
             
+            if not all(required_fields):
+                messages.error(request, 'All required fields must be filled.')
+                return render(request, 'login/user_form.html', context)
+
+            # Enhanced employee_id validation
+            if not employee_id.strip():
+                messages.error(request, 'Employee ID cannot be empty.')
+                return render(request, 'login/user_form.html', context)
+
+            # Check if employee_id already exists (case-insensitive)
+            if CustomUser.objects.filter(employee_id__iexact=employee_id).exists():
+                messages.error(request, f'Employee ID "{employee_id}" is already in use. Please use a different Employee ID.')
+                return render(request, 'login/user_form.html', context)
+            
             # Handle password validation
             password = None
             confirm_password = None
@@ -125,12 +193,11 @@ def user_add(request):
                 # Limited admin creating normal user
                 password = f"Welcome@{employee_id}"
             
-            if not all(required_fields):
-                messages.error(request, 'All required fields must be filled.')
-                return render(request, 'login/user_form.html', context)
-            
             # Validate password match for admin creating admin/limited admin users
             if request.user.admin_state == 'yes' and admin_state in ['yes', 'no']:
+                if not password or not confirm_password:
+                    messages.error(request, 'Password and confirmation are required for admin users.')
+                    return render(request, 'login/user_form.html', context)
                 if password != confirm_password:
                     messages.error(request, 'Passwords do not match.')
                     return render(request, 'login/user_form.html', context)
@@ -144,14 +211,9 @@ def user_add(request):
             else:
                 department = request.user.department  # Limited admin's department
             
-            # Check if employee_id already exists
-            if CustomUser.objects.filter(username=employee_id).exists():
-                messages.error(request, 'Employee ID already exists.')
-                return render(request, 'login/user_form.html', context)
-            
             # Create the user
             user = CustomUser.objects.create_user(
-                username=employee_id,
+                username=employee_id,  # Use employee_id as username for consistency
                 password=password,
                 name=name,
                 employee_id=employee_id,
@@ -183,36 +245,51 @@ def user_edit(request, user_id):
             return redirect('login:user_list')
     
     if request.method == 'POST':
-        edit_user.name = request.POST.get('name')
-        
-        # Handle department based on admin state
-        if request.user.admin_state == 'yes':
-            edit_user.department = request.POST.get('department')
-            edit_user.admin_state = request.POST.get('admin_state', '-')
-        # Limited admin can't change department or admin state
-        
-        # Handle state changes
-        new_state = request.POST.get('state')
-        if new_state and new_state != edit_user.state:
-            if new_state == 'disable':
-                edit_user.disable_by = request.user.employee_id
-                edit_user.disable_datetime = timezone.now()
-                edit_user.enable_by = None
-                edit_user.enable_datetime = None
-            elif new_state == 'enable' and request.user.admin_state == 'yes':  # Only admin can enable
-                edit_user.enable_by = request.user.employee_id
-                edit_user.enable_datetime = timezone.now()
-                edit_user.disable_by = None
-                edit_user.disable_datetime = None
-            edit_user.state = new_state
-        
-        edit_user.save()
-        messages.success(request, 'User updated successfully.')
-        return redirect('login:user_list')
+        try:
+            new_employee_id = request.POST.get('employee_id')
+            
+            # Check if employee_id is being changed
+            if new_employee_id != edit_user.employee_id:
+                # Check if new employee_id already exists (case-insensitive)
+                if CustomUser.objects.filter(employee_id__iexact=new_employee_id).exists():
+                    messages.error(request, f'Employee ID "{new_employee_id}" is already in use. Please use a different Employee ID.')
+                    return render(request, 'login/user_form.html', {'edit_user': edit_user})
+                
+                # Update username to match new employee_id for consistency
+                edit_user.username = new_employee_id
+                edit_user.employee_id = new_employee_id
+
+            edit_user.name = request.POST.get('name')
+            
+            # Handle department based on admin state
+            if request.user.admin_state == 'yes':
+                edit_user.department = request.POST.get('department')
+                edit_user.admin_state = request.POST.get('admin_state', '-')
+            
+            # Handle state changes
+            new_state = request.POST.get('state')
+            if new_state and new_state != edit_user.state:
+                if new_state == 'disable':
+                    edit_user.disable_by = request.user.employee_id
+                    edit_user.disable_datetime = timezone.now()
+                    edit_user.enable_by = None
+                    edit_user.enable_datetime = None
+                elif new_state == 'enable' and request.user.admin_state == 'yes':  # Only admin can enable
+                    edit_user.enable_by = request.user.employee_id
+                    edit_user.enable_datetime = timezone.now()
+                    edit_user.disable_by = None
+                    edit_user.disable_datetime = None
+                edit_user.state = new_state
+            
+            edit_user.save()
+            messages.success(request, 'User updated successfully.')
+            return redirect('login:user_list')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating user: {str(e)}')
+            return render(request, 'login/user_form.html', {'edit_user': edit_user})
     
-    return render(request, 'login/user_form.html', {
-        'edit_user': edit_user,
-    })
+    return render(request, 'login/user_form.html', {'edit_user': edit_user})
 
 @login_required
 def user_delete(request, user_id):
@@ -320,15 +397,84 @@ def user_bulk_add(request):
     
     return render(request, 'login/user_bulk_add.html')
 
+@login_required
+def user_bulk_delete(request):
+    # Only admin users can access this view
+    if request.user.admin_state != 'yes':
+        messages.error(request, 'You do not have permission to bulk delete users.')
+        return redirect('login:user_list')
+    
+    # Get all users except the current user and superusers
+    users = CustomUser.objects.exclude(id=request.user.id).exclude(is_superuser=True)
+    departments = CustomUser.objects.values_list('department', flat=True).distinct()
+    
+    if request.method == 'POST':
+        user_ids = request.POST.getlist('user_ids')
+        if user_ids:
+            try:
+                # Get selected users
+                selected_users = CustomUser.objects.filter(id__in=user_ids)
+                
+                # Check if any selected user is a superuser or the current user
+                if selected_users.filter(is_superuser=True).exists():
+                    messages.error(request, 'Cannot delete superuser accounts.')
+                    return redirect('login:user_bulk_delete')
+                
+                if str(request.user.id) in user_ids:
+                    messages.error(request, 'Cannot delete your own account.')
+                    return redirect('login:user_bulk_delete')
+                
+                # Disable the selected users
+                count = selected_users.update(
+                    state='disable',
+                    disable_by=request.user.employee_id,
+                    disable_datetime=timezone.now(),
+                    enable_by=None,
+                    enable_datetime=None
+                )
+                
+                messages.success(request, f'Successfully disabled {count} user(s).')
+                return redirect('login:user_list')
+            except Exception as e:
+                messages.error(request, f'Error disabling users: {str(e)}')
+        else:
+            messages.warning(request, 'No users selected for deletion.')
+    
+    context = {
+        'users': users,
+        'departments': departments
+    }
+    return render(request, 'login/user_bulk_delete.html', context)
+
 # Device Management Views
 @login_required
 def device_list(request):
+    # Get filter parameters
+    state = request.GET.get('state')
+    condition = request.GET.get('condition')
+    
+    # Base queryset based on user's admin state
     if request.user.admin_state == 'yes':
         devices = Device.objects.all()
     else:
         # Limited admin can only see devices in their department
         devices = Device.objects.filter(department=request.user.department)
-    return render(request, 'login/device_list.html', {'devices': devices})
+    
+    # Apply filters
+    if state:
+        devices = devices.filter(state=state)
+    if condition:
+        devices = devices.filter(condition=condition)
+        
+    # Order by serial number
+    devices = devices.order_by('serial_number')
+    
+    context = {
+        'devices': devices,
+        'current_state': state,
+        'current_condition': condition
+    }
+    return render(request, 'login/device_list.html', context)
 
 @login_required
 def device_add(request):
@@ -636,12 +782,7 @@ def device_bulk_delete(request):
             assigned_devices = []
             
             for device in devices:
-                active_transaction = DeviceTransaction.objects.filter(
-                    device=device,
-                    status='completed'
-                ).first()
-                
-                if active_transaction:
+                if device.state == 'assigned':
                     assigned_devices.append(device.serial_number)
             
             if assigned_devices:
@@ -659,9 +800,15 @@ def device_bulk_delete(request):
             return redirect('login:device_bulk_delete')
     
     # GET request - show the bulk delete page
-    devices = Device.objects.all()
+    # Get all devices that are not assigned
+    devices = Device.objects.exclude(state='assigned')
+    
+    # Get unique departments for filtering
+    departments = devices.values_list('department', flat=True).distinct().order_by('department')
+    
     context = {
         'devices': devices,
+        'departments': departments,
         'user': request.user,
         'page_title': 'Bulk Delete Devices'
     }

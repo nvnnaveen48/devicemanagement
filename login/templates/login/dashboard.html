@@ -2,81 +2,208 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Dashboard</h2>
+    <h2 class="mb-4">Dashboard</h2>
 
     <!-- Device Statistics -->
     <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Total Devices</h5>
-                    <p class="card-text display-4">{{ total_devices }}</p>
+        <div class="col-12">
+            <h4 class="mb-3">Device Statistics</h4>
+            <div class="row g-3">
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Total Devices</h6>
+                            <a href="{% url 'login:device_list' %}" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ total_devices }}</h4>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-success text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Available</h6>
+                            <a href="{% url 'login:device_list' %}?state=stock" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ available_devices }}</h4>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Assigned</h6>
+                            <a href="{% url 'login:device_list' %}?state=assigned" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ assigned_devices }}</h4>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Damaged</h6>
+                            <a href="{% url 'login:device_list' %}?condition=damaged" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ damaged_devices }}</h4>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-info text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Maintenance</h6>
+                            <a href="{% url 'login:device_list' %}?state=maintenance" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ maintenance_devices }}</h4>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Available Devices</h5>
-                    <p class="card-text display-4">{{ available_devices }}</p>
+    </div>
+
+    <!-- User Statistics -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h4 class="mb-3">User Statistics</h4>
+            <div class="row g-3">
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Total Users</h6>
+                            <a href="{% url 'login:user_list' %}" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ total_users }}</h4>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Assigned Devices</h5>
-                    <p class="card-text display-4">{{ assigned_devices }}</p>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Admin Users</h6>
+                            <a href="{% url 'login:user_list' %}?admin_state=yes" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ admin_users }}</h4>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Damaged Devices</h5>
-                    <p class="card-text display-4">{{ damaged_devices }}</p>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Limited Admin</h6>
+                            <a href="{% url 'login:user_list' %}?admin_state=no" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ limited_admin_users }}</h4>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-secondary text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Normal Users</h6>
+                            <a href="{% url 'login:user_list' %}?admin_state=-" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ normal_users }}</h4>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-success text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Enabled Users</h6>
+                            <a href="{% url 'login:user_list' %}?state=enable" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ enabled_users }}</h4>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-lg-2">
+                    <div class="card bg-info text-white">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">Disabled Users</h6>
+                            <a href="{% url 'login:user_list' %}?state=disable" class="text-white text-decoration-none">
+                                <h4 class="mb-0">{{ disabled_users }}</h4>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Department Statistics -->
-    <div class="row mt-4">
+    <div class="row">
         <div class="col-12">
+            <h4 class="mb-3">Department Statistics</h4>
+        </div>
+        {% for dept, stats in departments.items %}
+        <div class="col-md-6 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Department Statistics</h5>
+                    <h5 class="mb-0">{{ dept }}</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Department</th>
-                                    <th>Total</th>
-                                    <th>Available</th>
-                                    <th>Assigned</th>
-                                    <th>Damaged</th>
-                                    <th>Maintenance</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for dept, stats in departments.items %}
-                                <tr>
-                                    <td>{{ dept }}</td>
-                                    <td>{{ stats.total }}</td>
-                                    <td>{{ stats.available }}</td>
-                                    <td>{{ stats.assigned }}</td>
-                                    <td>{{ stats.damaged }}</td>
-                                    <td>{{ stats.maintenance }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="mb-3">Device Statistics</h6>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Total Devices
+                                    <span class="badge bg-primary rounded-pill">{{ stats.total }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Available
+                                    <span class="badge bg-success rounded-pill">{{ stats.available }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Assigned
+                                    <span class="badge bg-warning rounded-pill">{{ stats.assigned }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Damaged
+                                    <span class="badge bg-danger rounded-pill">{{ stats.damaged }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Maintenance
+                                    <span class="badge bg-info rounded-pill">{{ stats.maintenance }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="mb-3">User Statistics</h6>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Total Users
+                                    <span class="badge bg-primary rounded-pill">{{ stats.users.total }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Admin Users
+                                    <span class="badge bg-danger rounded-pill">{{ stats.users.admin }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Limited Admin
+                                    <span class="badge bg-warning rounded-pill">{{ stats.users.limited_admin }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Normal Users
+                                    <span class="badge bg-secondary rounded-pill">{{ stats.users.normal }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Enabled Users
+                                    <span class="badge bg-success rounded-pill">{{ stats.users.enabled }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Disabled Users
+                                    <span class="badge bg-danger rounded-pill">{{ stats.users.disabled }}</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
 
     <!-- Recent Transactions -->
@@ -96,30 +223,26 @@
                                     <th>Device</th>
                                     <th>From</th>
                                     <th>To</th>
-                                    <th>Condition</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for transaction in recent_transactions %}
                                 <tr>
                                     <td>{{ transaction.transaction_date|date:"Y-m-d H:i" }}</td>
-                                    <td>
-                                        {% if transaction.transaction_type == 'handover' %}
-                                        <span class="badge bg-success">Handover</span>
-                                        {% else %}
-                                        <span class="badge bg-info">Takeover</span>
-                                        {% endif %}
-                                    </td>
+                                    <td>{{ transaction.transaction_type|title }}</td>
                                     <td>{{ transaction.device.serial_number }}</td>
-                                    <td>{{ transaction.from_user.name }} ({{ transaction.from_user.employee_id }})</td>
-                                    <td>{{ transaction.to_user.name }} ({{ transaction.to_user.employee_id }})</td>
+                                    <td>{{ transaction.from_user.name }}</td>
+                                    <td>{{ transaction.to_user.name }}</td>
                                     <td>
-                                        {% if transaction.device_condition == 'damaged' %}
-                                        <span class="badge bg-danger">Damage</span>
-                                        {% else %}
-                                        <span class="badge bg-success">Working</span>
-                                        {% endif %}
+                                        <span class="badge {% if transaction.device_condition == 'working' %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ transaction.device_condition|title }}
+                                        </span>
                                     </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No recent transactions</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
