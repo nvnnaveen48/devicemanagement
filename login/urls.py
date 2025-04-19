@@ -17,6 +17,7 @@ urlpatterns = [
     path('users/edit/<int:user_id>/', views.user_edit, name='user_edit'),
     path('users/delete/<int:user_id>/', views.user_delete, name='user_delete'),
     path('users/bulk-add/', views.user_bulk_add, name='user_bulk_add'),
+    path('users/bulk-delete/', views.user_bulk_delete, name='user_bulk_delete'),
     
     # Device Management
     path('devices/', views.device_list, name='device_list'),

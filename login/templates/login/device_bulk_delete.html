@@ -5,50 +5,116 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <div class="card">
-                <div class="card-header bg-danger text-white">
+                <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Bulk Delete Devices</h4>
+                    <div>
+                        <span class="badge bg-light text-dark" id="selectedCount">0 Selected</span>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-danger">
-                        <h5 class="alert-heading">Warning!</h5>
-                        <p class="mb-0">This action will permanently delete the selected devices. This action cannot be undone.</p>
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Warning!</h5>
+                        <p class="mb-0">
+                            - This action will permanently delete the selected devices.<br>
+                            - Devices that are currently assigned cannot be deleted.<br>
+                            - This action cannot be undone.
+                        </p>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Department</label>
+                            <select class="form-select" id="departmentFilter">
+                                <option value="">All Departments</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept|lower }}">{{ dept }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Condition</label>
+                            <select class="form-select" id="conditionFilter">
+                                <option value="">All Conditions</option>
+                                <option value="working">Working</option>
+                                <option value="damaged">Damaged</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">State</label>
+                            <select class="form-select" id="stateFilter">
+                                <option value="">All States</option>
+                                <option value="stock">Stock</option>
+                                <option value="assigned">Assigned</option>
+                                <option value="maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Search</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search serial number...">
+                        </div>
                     </div>
 
                     <form method="post" id="bulkDeleteForm">
                         {% csrf_token %}
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table table-hover" id="devicesTable">
                                 <thead>
                                     <tr>
-                                        <th>
-                                            <input type="checkbox" id="selectAll" class="form-check-input">
+                                        <th style="width: 50px;">
+                                            <div class="form-check">
+                                                <input type="checkbox" id="selectAll" class="form-check-input">
+                                                <label class="form-check-label" for="selectAll">All</label>
+                                            </div>
                                         </th>
                                         <th>Serial Number</th>
                                         <th>Manufacturer</th>
                                         <th>Model</th>
                                         <th>Department</th>
-                                        <th>Status</th>
+                                        <th>Condition</th>
+                                        <th>State</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for device in devices %}
-                                    <tr>
+                                    <tr class="device-row" 
+                                        data-department="{{ device.department|lower }}" 
+                                        data-condition="{{ device.condition|lower }}"
+                                        data-state="{{ device.state|lower }}"
+                                        data-serial="{{ device.serial_number|lower }}">
                                         <td>
-                                            <input type="checkbox" name="device_ids" value="{{ device.id }}" class="form-check-input device-checkbox">
+                                            <div class="form-check">
+                                                <input type="checkbox" name="device_ids" value="{{ device.id }}" 
+                                                       class="form-check-input device-checkbox"
+                                                       {% if device.state == 'assigned' %}disabled{% endif %}>
+                                            </div>
                                         </td>
                                         <td>{{ device.serial_number }}</td>
                                         <td>{{ device.make }}</td>
                                         <td>{{ device.model }}</td>
                                         <td>{{ device.department }}</td>
                                         <td>
-                                            <span class="badge {% if device.status == 'working' %}bg-success{% else %}bg-danger{% endif %}">
-                                                {{ device.status|title }}
+                                            <span class="badge {% if device.condition == 'working' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ device.condition|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge {% if device.state == 'stock' %}bg-primary{% elif device.state == 'assigned' %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ device.state|title }}
                                             </span>
                                         </td>
                                     </tr>
                                     {% empty %}
                                     <tr>
-                                        <td colspan="6" class="text-center">No devices available for deletion.</td>
+                                        <td colspan="7" class="text-center">No devices available for deletion.</td>
                                     </tr>
                                     {% endfor %}
                                 </tbody>
@@ -56,7 +122,9 @@
                         </div>
 
                         <div class="d-flex justify-content-between mt-3">
-                            <a href="{% url 'login:device_list' %}" class="btn btn-secondary">Cancel</a>
+                            <a href="{% url 'login:device_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to Device List
+                            </a>
                             <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
                                 <i class="fas fa-trash"></i> Delete Selected Devices
                             </button>
@@ -67,49 +135,130 @@
         </div>
     </div>
 </div>
+
+<style>
+.table td {
+    vertical-align: middle;
+}
+.device-row {
+    display: table-row;
+}
+.device-row.hidden {
+    display: none;
+}
+</style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        // Handle select all checkbox
-        $('#selectAll').change(function() {
-            $('.device-checkbox').prop('checked', $(this).prop('checked'));
-            updateDeleteButton();
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all necessary elements
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const deleteButton = document.getElementById('deleteButton');
+    const selectedCountBadge = document.getElementById('selectedCount');
+    const deviceCheckboxes = document.getElementsByClassName('device-checkbox');
+    const searchInput = document.getElementById('searchInput');
+    const departmentFilter = document.getElementById('departmentFilter');
+    const conditionFilter = document.getElementById('conditionFilter');
+    const stateFilter = document.getElementById('stateFilter');
+    const deviceRows = document.getElementsByClassName('device-row');
 
-        // Handle individual checkboxes
-        $('.device-checkbox').change(function() {
-            updateDeleteButton();
-            // Update select all checkbox
-            $('#selectAll').prop('checked', 
-                $('.device-checkbox:checked').length === $('.device-checkbox').length
-            );
-        });
+    // Function to update filters
+    function updateFilters() {
+        const department = departmentFilter.value.toLowerCase();
+        const condition = conditionFilter.value.toLowerCase();
+        const state = stateFilter.value.toLowerCase();
+        const search = searchInput.value.toLowerCase();
 
-        // Update delete button state
-        function updateDeleteButton() {
-            const checkedCount = $('.device-checkbox:checked').length;
-            $('#deleteButton').prop('disabled', checkedCount === 0);
-            if (checkedCount > 0) {
-                $('#deleteButton').html(`<i class="fas fa-trash"></i> Delete ${checkedCount} Device(s)`);
+        Array.from(deviceRows).forEach(row => {
+            const rowDepartment = row.getAttribute('data-department');
+            const rowCondition = row.getAttribute('data-condition');
+            const rowState = row.getAttribute('data-state');
+            const rowSerial = row.getAttribute('data-serial');
+
+            const matchesDepartment = !department || rowDepartment === department;
+            const matchesCondition = !condition || rowCondition === condition;
+            const matchesState = !state || rowState === state;
+            const matchesSearch = !search || rowSerial.includes(search);
+
+            if (matchesDepartment && matchesCondition && matchesState && matchesSearch) {
+                row.style.display = 'table-row';
             } else {
-                $('#deleteButton').html('<i class="fas fa-trash"></i> Delete Selected Devices');
+                row.style.display = 'none';
+                const checkbox = row.querySelector('.device-checkbox');
+                if (checkbox) checkbox.checked = false;
             }
-        }
+        });
 
-        // Confirm before submitting
-        $('#bulkDeleteForm').submit(function(e) {
-            const checkedCount = $('.device-checkbox:checked').length;
-            if (checkedCount === 0) {
-                alert('Please select at least one device to delete.');
-                e.preventDefault();
-                return;
-            }
-            if (!confirm(`Are you sure you want to delete ${checkedCount} device(s)? This action cannot be undone.`)) {
-                e.preventDefault();
-            }
+        updateSelectAllState();
+        updateDeleteButtonState();
+    }
+
+    // Function to update select all checkbox state
+    function updateSelectAllState() {
+        const visibleCheckboxes = Array.from(deviceCheckboxes).filter(cb => 
+            cb.closest('tr').style.display !== 'none' && !cb.disabled
+        );
+        const allChecked = visibleCheckboxes.length > 0 && 
+            visibleCheckboxes.every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+    }
+
+    // Function to update delete button state
+    function updateDeleteButtonState() {
+        const checkedCount = Array.from(deviceCheckboxes)
+            .filter(cb => cb.checked).length;
+        
+        deleteButton.disabled = checkedCount === 0;
+        selectedCountBadge.textContent = `${checkedCount} Selected`;
+        
+        if (checkedCount > 0) {
+            deleteButton.innerHTML = `<i class="fas fa-trash"></i> Delete ${checkedCount} Device(s)`;
+        } else {
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete Selected Devices';
+        }
+    }
+
+    // Event Listeners
+    selectAllCheckbox.addEventListener('change', function() {
+        const visibleCheckboxes = Array.from(deviceCheckboxes).filter(cb => 
+            cb.closest('tr').style.display !== 'none' && !cb.disabled
+        );
+        visibleCheckboxes.forEach(cb => cb.checked = this.checked);
+        updateDeleteButtonState();
+    });
+
+    Array.from(deviceCheckboxes).forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllState();
+            updateDeleteButtonState();
         });
     });
+
+    // Filter event listeners
+    searchInput.addEventListener('input', updateFilters);
+    departmentFilter.addEventListener('change', updateFilters);
+    conditionFilter.addEventListener('change', updateFilters);
+    stateFilter.addEventListener('change', updateFilters);
+
+    // Form submission
+    document.getElementById('bulkDeleteForm').addEventListener('submit', function(e) {
+        const checkedCount = Array.from(deviceCheckboxes)
+            .filter(cb => cb.checked).length;
+        
+        if (checkedCount === 0) {
+            e.preventDefault();
+            alert('Please select at least one device to delete.');
+            return;
+        }
+
+        if (!confirm(`Are you sure you want to delete ${checkedCount} device(s)?\n\nThis action cannot be undone.`)) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialize
+    updateDeleteButtonState();
+});
 </script>
 {% endblock %} 

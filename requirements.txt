@@ -1,6 +1,21 @@
+# Install sqlserver
+# install python
+# install django 
+
+# config the server 
+
+# insert the server details in the hoto/setting.py file 
+
+
+
 Django==4.2.7
 Pillow==10.0.0
 django-crispy-forms==2.0
 crispy-bootstrap5==2023.10
 python-dotenv==1.0.0
-django-environ==0.11.2 
+django-environ==0.11.2
+gunicorn==21.2.0
+mysqlclient==2.2.0
+python-dotenv==1.0.0
+whitenoise==6.5.0
+django-cors-headers==4.2.0 

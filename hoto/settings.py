@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-3f#-hv*=vh-)v=e%8fsapj_r(hu$ak3h+2ak4l@d=1ursh$z6('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'login.middleware.LoginRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'hoto.urls'
@@ -78,11 +79,10 @@ WSGI_APPLICATION = 'hoto.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'devicedb', # Enter the databases name 
-        'USER': 'hoto',     # Add the username 
-        'PASSWORD': 'hoto@12345', #password 
-        'HOST': 'localhost',    # IP address of server 
-        'PORT': '3306',
+        'NAME': 'hoto',
+        'USER': 'nvn',
+        'PASSWORD': 'nvn@12345',
+        'HOST': 'localhost',        'PORT': '3306',
     }
 }
         
@@ -138,3 +138,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login:login'
 LOGIN_REDIRECT_URL = 'dashboard:home'
 LOGOUT_REDIRECT_URL = 'login:login'
+
+# Session Settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True

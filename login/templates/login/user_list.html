@@ -6,16 +6,24 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>User Management</h2>
-                {% if user.admin_state == 'yes' %}
-                    <div class="d-flex justify-content-between mb-3">
-                        <a href="{% url 'login:user_add' %}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Add User
-                        </a>
+                <div class="d-flex justify-content-between mb-3">
+                    <h4>User List</h4>
+                    <div>
+                        {% if request.user.admin_state == 'yes' %}
                         <a href="{% url 'login:user_bulk_add' %}" class="btn btn-success">
-                            <i class="fas fa-file-import"></i> Bulk Add Users
+                            <i class="fas fa-file-upload"></i> Bulk Add Users
                         </a>
+                        <a href="{% url 'login:user_bulk_delete' %}" class="btn btn-danger">
+                            <i class="fas fa-user-slash"></i> Bulk Disable Users
+                        </a>
+                        {% endif %}
+                        {% if request.user.admin_state in 'yes,no' %}
+                        <a href="{% url 'login:user_add' %}" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Add User
+                        </a>
+                        {% endif %}
                     </div>
-                {% endif %}
+                </div>
             </div>
             
             <div class="card">

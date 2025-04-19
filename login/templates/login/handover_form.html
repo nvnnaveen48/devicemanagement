@@ -22,7 +22,7 @@
                         <div class="mb-3">
                             <label for="device_serial_number" class="form-label">Device Serial Number</label>
                             <input type="text" class="form-control" id="device_serial_number" name="device_serial_number" 
-                                   placeholder="Enter Device Serial Number" required>
+                                   placeholder="Enter Device Serial Number" required autofocus>
                             {% if form.device_serial_number.errors %}
                                 <div class="invalid-feedback d-block">
                                     {{ form.device_serial_number.errors|join:", " }}
